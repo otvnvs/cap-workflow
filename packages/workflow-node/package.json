@@ -1,0 +1,17 @@
+{
+    "name": "@vp/workflow-node",
+    "version": "1.0.0",
+    "main": "index.js",
+    "private": true,
+    "dependencies": {
+        "@sap/cds": "^9"
+    },
+    "cds": {
+        "main": "index.cds",
+        "requires": {
+            "WorkflowProjectionService": {
+                "impl": "node_modules/@vp/workflow-node/lib/workflow-service.js"
+            }
+        }
+    }
+}

@@ -1,0 +1,4 @@
+#!/bin/bash
+URL=http://localhost:4004/odata/v4/workflow
+curl -X POST -H "Content-Type: application/json" "$URL/Test" --data '{
+}'
