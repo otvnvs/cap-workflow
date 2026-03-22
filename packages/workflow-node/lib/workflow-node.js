@@ -198,7 +198,8 @@ function generateWorkflowServiceCds(discovered, options = {}) {
       : ''
 
     log.info(`[workflow-node]   projection: ${entry.entitySetName} → ${alias} (excluding: ${excludedFields.join(', ') || 'nothing'})`)
-    return `  @readonly entity ${entry.entitySetName} as projection on ${alias}${excludingClause};`
+    //return `  @readonly entity ${entry.entitySetName} as projection on ${alias}${excludingClause};`
+    return `  entity ${entry.entitySetName} as projection on ${alias}${excludingClause};`
   })
 
   const catalog = `  @readonly entity WorkflowCatalog {
@@ -207,7 +208,47 @@ function generateWorkflowServiceCds(discovered, options = {}) {
         title         : String(255);
         description   : String(1000);
         keyFieldsJson : LargeString;
-  }`
+  }
+
+  action start(
+    entityName  : String(255),
+    keyJson     : LargeString,
+    initiatedBy : String(255)
+  ) returns {
+    entityName          : String(255);
+    workflowStatus      : String(20);
+    workflowInitiatedBy : String(255);
+    workflowInitiatedAt : Timestamp;
+  };
+
+  action setDueDate(
+    entityName : String(255),
+    keyJson    : LargeString,
+    dueDate    : Timestamp
+  ) returns {
+    entityName      : String(255);
+    workflowDueDate : Timestamp;
+  };
+
+  action assignOwner(
+    entityName : String(255),
+    keyJson    : LargeString,
+    ownerId    : String(255)
+  ) returns {
+    entityName    : String(255);
+    workflowOwner : String(255);
+  };
+
+  action transition(
+    entityName : String(255),
+    keyJson    : LargeString,
+    status     : String(20),
+    substatus  : String(120)
+  ) returns {
+    entityName        : String(255);
+    workflowStatus    : String(20);
+    workflowSubstatus : String(120);
+  };`
 
   const preface   = usingLines.length > 0 ? `${usingLines.join('\n\n')}\n\n` : ''
   const implAnnot = implPath ? `@impl: '${implPath.replaceAll('\\', '/')}'\n` : ''

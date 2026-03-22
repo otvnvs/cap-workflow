@@ -12,6 +12,12 @@ npm install
 
 ## Running
 
+First deploy
+
+```bash
+cds deploy
+```
+
 ```bash
 npm run start
 ```
@@ -123,9 +129,15 @@ module.exports = async function (options) {
 }
 ```
 
+## Testing
+
+```bash
+./scripts/test.sh
+```
+
 ## Issues
 
-Failure to get projections tables initialized:
+Failure to get projections tables initialized (resolved now):
 
 ```bash
 curl "http://localhost:4004/workflow/Workflow1"
