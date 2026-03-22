@@ -4,7 +4,8 @@ using { cuid, managed } from '@sap/cds/common';
 using { vp.workflow.WorkflowAspect } from '@vp/workflow-node';
 
 @workflow
-@workflow.title: 'Workflow Test'
+@workflow.title: 'Workflow Test Title'
+@workflow.description : 'Workflow Test Description'
 entity Test: managed, WorkflowAspect {
   key ID : UUID;
   test:String;

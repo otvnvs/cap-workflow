@@ -122,3 +122,23 @@ module.exports = async function (options) {
   return cds.server(options)
 }
 ```
+
+## Issues
+
+Failure to get projections tables initialized:
+
+```bash
+curl "http://localhost:4004/workflow/Workflow1"
+```
+
+Response
+
+```json
+{
+  "error": {
+    "message": "no such table: WorkflowProjectionService_Workflow1 in:\nSELECT json_insert('{}','$.\"createdAt\"',createdAt,'$.\"createdBy\"',createdBy,'$.\"modifiedAt\"',modifiedAt,'$.\"modifiedBy\"',modifiedBy,'$.\"workflowStatus\"',workflowStatus,'$.\"workflowSubstatus\"',workflowSubstatus,'$.\"workflowInitiatedBy\"',workflowInitiatedBy,'$.\"workflowInitiatedAt\"',workflowInitiatedAt,'$.\"workflowOwner\"',workflowOwner,'$.\"workflowDueDate\"',workflowDueDate,'$.\"ID\"',ID,'$.\"test\"',test) as _json_ FROM (SELECT \"$W\".createdAt,\"$W\".createdBy,\"$W\".modifiedAt,\"$W\".modifiedBy,\"$W\".workflowStatus,\"$W\".workflowSubstatus,\"$W\".workflowInitiatedBy,\"$W\".workflowInitiatedAt,\"$W\".workflowOwner,\"$W\".workflowDueDate,\"$W\".ID,\"$W\".test FROM WorkflowProjectionService_Workflow1 as \"$W\" ORDER BY \"$W\".ID ASC LIMIT ?)",
+    "code": "SQLITE_ERROR",
+    "@Common.numericSeverity": 4
+  }
+}
+```
