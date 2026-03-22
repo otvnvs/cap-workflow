@@ -347,48 +347,12 @@ async function initWorkflow(options = {}) {
 
   patchServerModelLoading(cds, generatedDir, logger)
 
-  // Once CAP has served all services and DB is connected:
-  // 1. Pass discovered metadata to WorkflowProjectionService for WorkflowCatalog
-  // 2. Create SQLite views for each projection so queries resolve correctly
-  cds.on('served', async (services) => {
+  // Once CAP instantiates the service, pass discovered metadata to it
+  cds.on('served', (services) => {
     const svc = services['WorkflowProjectionService']
     if (svc?.setDiscovered) {
       svc.setDiscovered(discovered)
       logger.info(`[workflow-node] WorkflowProjectionService.setDiscovered called`)
-    }
-
-    // Create projection views in SQLite so CAP can resolve them at query time.
-    // On HANA this is handled automatically — only needed for SQLite.
-    try {
-      const db = await cds.connect.to('db')
-      if (db.kind !== 'sqlite') return
-
-      for (const entry of discovered) {
-        const viewName  = `WorkflowProjectionService_${entry.entitySetName}`
-        const tableName = entry.entityName.replaceAll('.', '_')
-        const elements  = entry.elements || {}
-
-        const MANAGED_FIELDS    = new Set(['createdAt', 'createdBy', 'modifiedAt', 'modifiedBy'])
-        const ASPECT_FIELDS_SET = new Set([
-          'workflowStatus', 'workflowSubstatus', 'workflowInitiatedBy',
-          'workflowInitiatedAt', 'workflowOwner', 'workflowDueDate',
-        ])
-
-        const columns = Object.keys(elements).filter((f) => {
-          if (entry.keyFields.includes(f)) return true
-          if (MANAGED_FIELDS.has(f))       return true
-          if (ASPECT_FIELDS_SET.has(f))    return true
-          return false
-        })
-
-        const colList = columns.join(', ')
-        const sql     = `CREATE VIEW IF NOT EXISTS "${viewName}" AS SELECT ${colList} FROM "${tableName}"`
-
-        logger.info(`[workflow-node] creating view: ${viewName} → ${tableName}`)
-        await db.run(sql)
-      }
-    } catch (err) {
-      logger.warn(`[workflow-node] failed to create SQLite views: ${err.message}`)
     }
   })
 

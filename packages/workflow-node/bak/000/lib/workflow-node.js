@@ -36,11 +36,14 @@ function resolveSourceFile(definition, cwd = process.cwd()) {
   return path.isAbsolute(file) ? file : path.join(cwd, file)
 }
 
-function toImportPath(filePath) {
-  // Always use absolute paths in generated using imports.
-  // Relative paths from the OS temp dir to the project are fragile
-  // across platforms and deploy contexts.
-  return filePath.replaceAll('\\', '/')
+function toImportPath(filePath, baseDir) {
+  let output = filePath
+  if (baseDir && path.isAbsolute(filePath)) {
+    output = path.relative(baseDir, filePath)
+  }
+  output = output.replaceAll('\\', '/')
+  if (!output.startsWith('.')) output = `./${output}`
+  return output
 }
 
 function parseVcapAppName() {
@@ -126,7 +129,6 @@ function discoverWorkflowEntities(csn, options = {}) {
         description:      def['@workflow.description'] ?? def['@description'] ?? '',
         keyFields,
         keyFieldsJson:    JSON.stringify(keyFields),
-        elements,          // needed for field selection in CDS generation
       }
       log.info(`[workflow-node]   resolved: entitySetName=${entry.entitySetName}, title="${entry.title}"`)
       return entry
@@ -165,43 +167,21 @@ function generateWorkflowServiceCds(discovered, options = {}) {
 
   const usingLines = []
   for (const [filePath, imports] of grouped.entries()) {
-    const importPath = toImportPath(filePath)
+    const importPath = toImportPath(filePath, baseDir)
     log.info(`[workflow-node]   using import: ${importPath}`)
     usingLines.push(
       `using {\n  ${imports.map((i) => `${i.full} as ${i.alias}`).join(',\n  ')}\n} from '${importPath}';`
     )
   }
 
-  const MANAGED_FIELDS    = new Set(['createdAt', 'createdBy', 'modifiedAt', 'modifiedBy'])
-  const ASPECT_FIELDS_SET = new Set([
-    'workflowStatus', 'workflowSubstatus', 'workflowInitiatedBy',
-    'workflowInitiatedAt', 'workflowOwner', 'workflowDueDate',
-  ])
-  const KEY_FIELD = 'ID'
-
   const projections = discovered.map((entry) => {
-    const alias    = aliasByKey.get(entry.entityName) || entry.entityName
-    const elements = entry.elements || {}
-
-    // Exclude non-workflow, non-key, non-managed fields using 'excluding'
-    // This keeps the projection on the original entity — no new table created
-    const excludedFields = Object.keys(elements).filter((f) => {
-      if (entry.keyFields.includes(f)) return false
-      if (MANAGED_FIELDS.has(f))       return false
-      if (ASPECT_FIELDS_SET.has(f))    return false
-      return true
-    })
-
-    const excludingClause = excludedFields.length > 0
-      ? `
-    excluding { ${excludedFields.join(', ')} }`
-      : ''
-
-    log.info(`[workflow-node]   projection: ${entry.entitySetName} → ${alias} (excluding: ${excludedFields.join(', ') || 'nothing'})`)
-    return `  @readonly entity ${entry.entitySetName} as projection on ${alias}${excludingClause};`
+    const alias = aliasByKey.get(entry.entityName) || entry.entityName
+    log.info(`[workflow-node]   projection: ${entry.entitySetName} → ${alias}`)
+    return `  @readonly entity ${entry.entitySetName} as projection on ${alias};`
   })
 
-  const catalog = `  @readonly entity WorkflowCatalog {
+  const catalog = `  @cds.persistence.skip
+  @readonly entity WorkflowCatalog {
     key entityName    : String(255);
         entitySetName : String(255);
         title         : String(255);
@@ -347,48 +327,12 @@ async function initWorkflow(options = {}) {
 
   patchServerModelLoading(cds, generatedDir, logger)
 
-  // Once CAP has served all services and DB is connected:
-  // 1. Pass discovered metadata to WorkflowProjectionService for WorkflowCatalog
-  // 2. Create SQLite views for each projection so queries resolve correctly
-  cds.on('served', async (services) => {
+  // Once CAP instantiates the service, pass discovered metadata to it
+  cds.on('served', (services) => {
     const svc = services['WorkflowProjectionService']
     if (svc?.setDiscovered) {
       svc.setDiscovered(discovered)
       logger.info(`[workflow-node] WorkflowProjectionService.setDiscovered called`)
-    }
-
-    // Create projection views in SQLite so CAP can resolve them at query time.
-    // On HANA this is handled automatically — only needed for SQLite.
-    try {
-      const db = await cds.connect.to('db')
-      if (db.kind !== 'sqlite') return
-
-      for (const entry of discovered) {
-        const viewName  = `WorkflowProjectionService_${entry.entitySetName}`
-        const tableName = entry.entityName.replaceAll('.', '_')
-        const elements  = entry.elements || {}
-
-        const MANAGED_FIELDS    = new Set(['createdAt', 'createdBy', 'modifiedAt', 'modifiedBy'])
-        const ASPECT_FIELDS_SET = new Set([
-          'workflowStatus', 'workflowSubstatus', 'workflowInitiatedBy',
-          'workflowInitiatedAt', 'workflowOwner', 'workflowDueDate',
-        ])
-
-        const columns = Object.keys(elements).filter((f) => {
-          if (entry.keyFields.includes(f)) return true
-          if (MANAGED_FIELDS.has(f))       return true
-          if (ASPECT_FIELDS_SET.has(f))    return true
-          return false
-        })
-
-        const colList = columns.join(', ')
-        const sql     = `CREATE VIEW IF NOT EXISTS "${viewName}" AS SELECT ${colList} FROM "${tableName}"`
-
-        logger.info(`[workflow-node] creating view: ${viewName} → ${tableName}`)
-        await db.run(sql)
-      }
-    } catch (err) {
-      logger.warn(`[workflow-node] failed to create SQLite views: ${err.message}`)
     }
   })
 
