@@ -1,44 +1,124 @@
-# MonoRepos
+# Workflow Example Project
+
+```
+see ./doc/spec
+```
+
+## Installing
+
+```bash
+npm install
+```
+
+## Running
+
+```bash
+npm run start
+```
+
+## Testing
+
+```
+http://localhost:4004
+```
+
+Should render dynamically created service endpoint
 
 
-To help with your development notes, here is a breakdown of the differences between the Workspace Package approach we just set up and the CAP Plugin approach.
+```
+/workflow/ $metadata
+ * Test
+ * Workflow1
+ * Workflow2
+ * Workflow3
+ * WorkflowCatalog
+```
 
-## Monorepo Package vs. CAP Plugin
+## WorkflowCatalog
 
-| Feature       | Workspace Package (Modular App Logic)                                          | CAP Plugin (Framework Extension)                                                |
-| ------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| Primary Goal  | Dividing business domains (e.g., `Sales`, `Inventory`) into manageable pieces. | Adding generic features (e.g., custom logging, auditing) to _any_ service.      |
-| Activation    | Explicit: You must add `using from '@vp/test'` in your main CDS files.         | Implicit: CAP finds it automatically if `cds-plugin.js` exists in the package.  |
-| Model Scope   | Owns its own entities and services that the main app "consumes."               | Usually "observes" or "intercepts" existing entities using `cds.on` hooks.      |
-| Deployment    | Models are bundled into the main `csn.json` during `cds build`.                | Often causes issues if the plugin tries to inject hidden database requirements. |
-| Best Used For | Internal project structure and Monor
+Renders dynamically based on entities annotated with `@workflow` (see `db/schema.cds`)
 
-* Automatic Loading: Plugins load automatically when CAP starts. If your plugin defines a database schema but the main project isn't aware of it during the cds deploy or cds build phase, it often results in "table not found" errors.
-* Implicit vs. Explicit: Plugins are "invisible" extensions. Workspace packages are "explicit" modules. For business services (like your TestService), the framework prefers the explicit workspace approach so that the cds compiler knows exactly which models to include in the build. 
+```json
+{
+  "@odata.context": "$metadata#WorkflowCatalog",
+  "value": [
+    {
+      "entityName": "fs.workflow.Test",
+      "entitySetName": "Test",
+      "title": "Workflow Test",
+      "description": "",
+      "keyFieldsJson": "[\"ID\"]"
+    },
+    {
+      "entityName": "fs.workflow.Workflow1",
+      "entitySetName": "Workflow1",
+      "title": "Workflow 1",
+      "description": "",
+      "keyFieldsJson": "[\"ID\"]"
+    },
+    {
+      "entityName": "fs.workflow.Workflow2",
+      "entitySetName": "Workflow2",
+      "title": "Workflow 2",
+      "description": "",
+      "keyFieldsJson": "[\"ID\"]"
+    },
+    {
+      "entityName": "fs.workflow.Workflow3",
+      "entitySetName": "Workflow3",
+      "title": "Workflow 3",
+      "description": "",
+      "keyFieldsJson": "[\"ID\"]"
+    }
+  ]
+}
+```
 
-## Developer Note Summary
-Use Packages when you want to build a specific service or database model that belongs to your app logic. Use Plugins only when you want to write code that modifies how all services behave (e.g., adding a common lastChangedBy field to every entity automatically).
+## Workflow Monorepo
 
-# Getting Started
+This is responsible for dynamically creating the WorkflowCatalog service. It exists at
 
-Welcome to this CAP project.
+```
+packages/workflow-node
+```
 
-It contains these folders and files, following our recommended project layout:
+It creates the following cds file dynamically
 
-File or Folder | Purpose
----------|----------
-`app/` | content for UI frontends goes here
-`db/` | your domain models and data go here
-`srv/` | your service models and code go here
-`packages/test` | test monorepo
-`readme.md` | this getting started guide
+```
+/tmp/cap-workflow/core-service/workflow-service.cds
+```
 
-## Next Steps
+This will have content similar to the following
 
-- Open a new terminal and run `cds watch`
-- (in VS Code simply choose _**Terminal** > Run Task > cds watch_)
-- Start with your domain model, in a CDS file in `db/`
+```
+using {
+  core.db.notificationtemplate.WorkflowTest as __WorkflowEntity_1,
+  core.db.notificationtemplate.WorkflowOtherTest as __WorkflowEntity_2
+} from '../../../mnt/c/Users/Ockert/src/vmglabs/dischem/dischem-vp/dischem-vp/services/core-service/db/schemas/workflows.cds';
 
-## Learn More
+@path: '/workflow'
+@impl: '/mnt/c/Users/Ockert/src/vmglabs/dischem/dischem-vp/dischem-vp/packages/workflow-node/lib/workflow-service.js'
+service WorkflowProjectionService {
+  @readonly entity WorkflowTest as projection on __WorkflowEntity_1;
+  @readonly entity WorkflowOtherTest as projection on __WorkflowEntity_2;
 
-Learn more at <https://cap.cloud.sap>
+  @readonly entity WorkflowCatalog {
+    key entityName    : String(255);
+        entitySetName : String(255);
+        title         : String(255);
+        description   : String(1000);
+        keyFieldsJson : LargeString;
+  }
+}
+```
+
+This file is bootstrapped in `server.js` as follows
+
+```js
+const cds = require('@sap/cds')
+const { initWorkflow } = require('@vp/workflow-node')
+module.exports = async function (options) {
+  await initWorkflow({ cds, cwd: __dirname })
+  return cds.server(options)
+}
+```
