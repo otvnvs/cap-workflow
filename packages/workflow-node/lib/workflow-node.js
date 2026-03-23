@@ -78,7 +78,12 @@ function discoverWorkflowEntities(csn, options = {}) {
   log.info('[workflow-node] scanning CSN definitions for @workflow entities...')
 
   const allEntityNames = Object.entries(definitions)
-    .filter(([, def]) => def.kind === 'entity')
+    .map(([name, def]) => {//ockert - peek
+      //peek here
+      return [name, def]; // Pass it along to the filter
+    })
+    //.filter(([, def]) => def.kind === 'entity') // ockert: original
+    .filter(([, def]) => def.kind === 'entity' || ('projection' in def) ) // ockert: changed to skip projections
     .map(([name]) => name)
   log.info(`[workflow-node] total entities in model: ${allEntityNames.length}`)
   log.info(`[workflow-node] entities: ${allEntityNames.join(', ')}`)
@@ -89,7 +94,8 @@ function discoverWorkflowEntities(csn, options = {}) {
       const hasMarker   = def['@workflow'] === true
       // Skip service projections — they have a 'query' property in CSN.
       // Only base db entities should be discovered.
-      const isProjection = !!def.query
+      //const isProjection = !!def.query//ockert: original
+      const isProjection = !!def.query || ('projection' in def)//ockert: extra test
       log.info(`[workflow-node]   ${name}: kind=${def.kind}, @workflow=${def['@workflow']}, projection=${isProjection}`)
       return isEntity && hasMarker && !isProjection
     })

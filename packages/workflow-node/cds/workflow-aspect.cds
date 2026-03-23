@@ -15,7 +15,7 @@ type WorkflowStatus : String(20) enum {
 // --- Workflow Aspect ----------------------------------------------------------
 
 aspect WorkflowAspect {
-  workflowStatus      : WorkflowStatus default 'NOT_STARTED';
+  workflowStatus      : WorkflowStatus default 'NOT_STARTED' @assert.range;
   workflowSubstatus   : String(120);
   workflowInitiatedBy : String(255);
   workflowInitiatedAt : Timestamp;

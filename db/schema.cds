@@ -33,3 +33,35 @@ entity Workflow3: managed, WorkflowAspect {
   key ID : UUID;
   test:String;
 }
+
+
+//----------------------
+
+@workflow
+@workflow.title: 'Workflow 4'
+entity Workflow4: managed, WorkflowAspect {
+  key ID : UUID;
+  test:String;
+  foo:String;
+}
+
+@workflow
+@workflow.title: 'Workflow 5'
+entity Workflow5: managed, WorkflowAspect {
+  key ID : UUID;
+  test:String;
+  bar:String;
+  baz:String;
+}@workflow
+@workflow.title: 'Workflow 6'
+entity Workflow6: managed, WorkflowAspect {
+  key ID : UUID;
+  test:String;
+  qux:String;
+}@workflow
+@workflow.title: 'Workflow 7'
+entity Workflow7: managed, WorkflowAspect {
+  key ID : UUID;
+  test:String;
+  klutz:String;
+}

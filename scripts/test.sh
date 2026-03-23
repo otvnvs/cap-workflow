@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-BASE_URL="${1:-http://localhost:4004}"
+BASE_URL="${1:-http://localhost:4005}"
 WORKFLOW="$BASE_URL/workflow"
 ENTITY_NAME="fs.workflow.Workflow1"
 
