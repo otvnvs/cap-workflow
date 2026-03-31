@@ -1,6 +1,7 @@
 'use strict';
 
 const cds    = require('@sap/cds');
+const { SELECT, INSERT, UPDATE, DELETE } = cds.ql
 const crypto = require('node:crypto');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -37,8 +38,9 @@ async function fetchCatalog(url) {
 
 module.exports = class WorkflowAggService extends cds.ApplicationService {
 
-  async init() {
 
+  async init() {
+    const WorkflowCatalog = cds.entities['vp.workflowAgg.WorkflowAggService.WorkflowCatalog'];
     // ── Services ───────────────────────────────────────────────────────────────
     // Returns connectivity status for each configured source URL.
     // Attempts a live fetch to determine current status.
@@ -102,44 +104,121 @@ module.exports = class WorkflowAggService extends cds.ApplicationService {
       console.log("workflow-agg:stub:start");
       const { entityName, keyJson, initiatedBy } = req.data
       const keys = JSON.parse(keyJson)
-      console.log("Services:read");
-	/*
-      return start(
-        { entityName, keys },
-        { initiatedBy: initiatedBy ?? req.user?.id }
-      )
-	*/
-      return null;
+      //--------------------------------------------------------------------------------
+      const catalog = await this.run(SELECT.from('WorkflowCatalog'))
+      const entry = catalog.find(item => item.entityName === entityName);
+      if (entry) {
+          const workflowSrv = await cds.connect.to({
+         kind: 'rest', 
+         credentials: { url: `${entry.serviceUrl}/workflow` }
+          })
+          try {
+         const response = await workflowSrv.post('/start', {
+        entityName: entityName,
+        keyJson: keyJson,
+        initiatedBy: 'alice'
+         })
+         console.log('Workflow started:', response)
+         return response;
+          } catch (e) {
+         return req.error(400, e.toString())
+          }
+      } else {
+          console.log('Entity not found in catalog, skipping workflow start.')
+          return req.error(400, "Entity not found in catalog");
+      }
+      //--------------------------------------------------------------------------------
     })
 
     this.on('setDueDate', async (req) => {
       console.log("workflow-agg:stub:setDueDate");
       const { entityName, keyJson, dueDate } = req.data
       const keys = JSON.parse(keyJson)
-	/*
-      return setDueDate({ entityName, keys }, dueDate)
-	*/
-      return null;
+      //--------------------------------------------------------------------------------
+      const catalog = await this.run(SELECT.from('WorkflowCatalog'))
+      const entry = catalog.find(item => item.entityName === entityName);
+      if (entry) {
+          const workflowSrv = await cds.connect.to({
+         kind: 'rest', 
+         credentials: { url: `${entry.serviceUrl}/workflow` }
+          })
+          try {
+         const response = await workflowSrv.post('/setDueDate', {
+        entityName: entityName,
+        keyJson: keyJson,
+        dueDate: dueDate 
+         })
+         console.log('Workflow started:', response)
+         return response;
+          } catch (e) {
+         return req.error(400, e.toString())
+          }
+      } else {
+          console.log('Entity not found in catalog, skipping workflow start.')
+          return req.error(400, "Entity not found in catalog");
+      }
+      //--------------------------------------------------------------------------------
     })
 
     this.on('assignOwner', async (req) => {
       console.log("workflow-agg:stub:assignOwner");
       const { entityName, keyJson, ownerId } = req.data
       const keys = JSON.parse(keyJson)
-	/*
-      return assignOwner({ entityName, keys }, ownerId)
-	*/
-      return null;
+      //--------------------------------------------------------------------------------
+      const catalog = await this.run(SELECT.from('WorkflowCatalog'))
+      const entry = catalog.find(item => item.entityName === entityName);
+      if (entry) {
+          const workflowSrv = await cds.connect.to({
+         kind: 'rest', 
+         credentials: { url: `${entry.serviceUrl}/workflow` }
+          })
+          try {
+         const response = await workflowSrv.post('/assignOwner', {
+        entityName: entityName,
+        keyJson: keyJson,
+        ownerId: ownerId
+         })
+         console.log('Workflow started:', response)
+         return response;
+          } catch (e) {
+         return req.error(400, e.toString())
+          }
+      } else {
+          console.log('Entity not found in catalog, skipping workflow start.')
+          return req.error(400, "Entity not found in catalog");
+      }
+      //--------------------------------------------------------------------------------
     })
 
     this.on('transition', async (req) => {
       console.log("workflow-agg:stub:transition");
       const { entityName, keyJson, status, substatus } = req.data
       const keys = JSON.parse(keyJson)
-	/*
-      return transition({ entityName, keys }, status, substatus)
-	*/
-      return null;
+      //--------------------------------------------------------------------------------
+      const catalog = await this.run(SELECT.from('WorkflowCatalog'))
+      const entry = catalog.find(item => item.entityName === entityName);
+      if (entry) {
+          const workflowSrv = await cds.connect.to({
+         kind: 'rest', 
+         credentials: { url: `${entry.serviceUrl}/workflow` }
+          })
+          try {
+         const response = await workflowSrv.post('/transition', {
+        entityName: entityName,
+        keyJson: keyJson,
+        status: status,
+        substatus: substatus
+         })
+         console.log('Workflow started:', response)
+         return response;
+          } catch (e) {
+         return req.error(400, e.toString())
+          }
+      } else {
+          console.log('Entity not found in catalog, skipping workflow start.')
+          return req.error(400, "Entity not found in catalog");
+      }
+      //--------------------------------------------------------------------------------
     })
 
     await super.init();
