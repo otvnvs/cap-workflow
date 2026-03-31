@@ -1,0 +1,18 @@
+{
+  "name": "@vp/workflow-agg",
+  "version": "1.0.0",
+  "description": "Workflow aggregator — collects WorkflowCatalog from multiple source services",
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^9"
+  },
+  "cds": {
+    "main": "index.cds",
+    "requires": {
+      "WorkflowProjectionService": {
+        "impl": "node_modules/@vp/workflow-agg/lib/workflow-agg-service.js"
+      }
+    }
+  }
+}

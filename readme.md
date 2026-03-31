@@ -121,11 +121,12 @@ service WorkflowProjectionService {
 This file is bootstrapped in `server.js` as follows
 
 ```js
-const cds = require('@sap/cds')
-const { initWorkflow } = require('@vp/workflow-node')
-module.exports = async function (options) {
-  await initWorkflow({ cds, cwd: __dirname })
-  return cds.server(options)
+const cds=require("@sap/cds")
+const{initWorkflow}=require("@vp/workflow-node")
+module.exports=async function(options){
+    await initWorkflow({cds,cwd:__dirname})
+    //return cds.server.bind(cds)(options);
+    return cds.server(options)
 }
 ```
 
@@ -154,3 +155,11 @@ Response
   }
 }
 ```
+
+## Aggregator Notes
+
+* Aggregator running on different server aggregates workflows from different services and lists in workflow catalog from workflow-node
+* Aggregator has operations that workflow-node has
+* Aggregator actions action signature matches those of workflow-node actions
+* Aggregator uses entityName parameter to look server URL in Aggregator WorkflowCatalog to perform call to appropriate server (assuming entityName is unique between workflow-node servers
+* Aggregator responds to caller with response from called workflow-node server

@@ -7,4 +7,6 @@ service TestService {
   entity Workflow5_ as projection on db.Workflow5 ;
   entity Workflow6_ as projection on db.Workflow6 ;
   entity Workflow7_ as projection on db.Workflow7 ;
+  entity Dummy1_ as projection on db.Dummy1 ;
+  entity Dummy2_ as projection on db.Dummy2 ;
 }

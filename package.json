@@ -4,7 +4,9 @@
   "dependencies": {
     "@sap-cloud-sdk/http-client": "^4.5.1",
     "@sap/cds": "^9",
-    "@vp/workflow-node": "file:packages/workflow-node"
+    "@vp/workflow-node": "file:packages/workflow-node",
+    "@vp/dummy-node": "file:packages/dummy-node",
+    "@vp/workflow-agg": "file:packages/workflow-agg"
   },
   "devDependencies": {
     "@cap-js/cds-test": "^0.4.1",
@@ -23,7 +25,7 @@
   "private": true,
   "cds": {
     "server": {
-      "port": 4004
+      "port": 4008
     },
     "requires": {
       "db": {

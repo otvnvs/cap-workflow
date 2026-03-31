@@ -1,0 +1,13 @@
+{
+  "name": "@vp/dummy-node",
+  "version": "1.0.0",
+  "description": "Minimal CAP plugin pattern — annotation discovery + dynamic service generation",
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^9"
+  },
+  "cds": {
+    "main": "index.cds"
+  }
+}

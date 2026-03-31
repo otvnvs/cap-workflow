@@ -274,6 +274,7 @@ function generateWorkflowServiceCds(discovered, options = {}) {
   return cdsContent
 }
 
+
 // ─── Server patching ──────────────────────────────────────────────────────────
 
 function patchServerModelLoading(cds, generatedDir, log) {
